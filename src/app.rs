@@ -1,25 +1,48 @@
+use projects::Projects;
+use tui::widgets::ListState;
+
+pub mod projects;
+
+pub enum Window {
+    Projects,
+    ProjectDetails,
+}
+
 pub struct App {
-    pub items: Vec<String>,    // Example: A list of items to display
-    pub selected_index: usize, // Example: Selected item index
+    pub projects: Projects,
+
+    pub state: ListState,
+    pub state_index: u16,
+    pub window: Window,
 }
 
 impl App {
     pub fn new() -> Self {
         Self {
-            items: vec!["Item 1".into(), "Item 2".into(), "Item 3".into()],
-            selected_index: 0,
+            projects: Projects::new(),
+
+            state: ListState::default(),
+            state_index: 0,
+
+            window: Window::Projects,
         }
     }
 
     pub fn next(&mut self) {
-        if self.selected_index < self.items.len() - 1 {
-            self.selected_index += 1;
+        if self.projects.projects.len() <= usize::from(self.state_index + 1) {
+            return;
         }
+
+        self.state_index += 1;
+        self.state.select(Some(usize::from(self.state_index)));
     }
 
     pub fn previous(&mut self) {
-        if self.selected_index > 0 {
-            self.selected_index -= 1;
+        if self.state_index == 0 {
+            return;
         }
+
+        self.state_index -= 1;
+        self.state.select(Some(usize::from(self.state_index)));
     }
 }

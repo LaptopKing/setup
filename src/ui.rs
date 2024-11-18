@@ -1,12 +1,14 @@
 use crossterm::{
     event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
     execute,
+    style::Color,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
 use std::io;
 use tui::{
     backend::{Backend, CrosstermBackend},
     layout::{Constraint, Direction, Layout},
+    style::Style,
     widgets::{Block, Borders, List, ListItem},
     Terminal,
 };
@@ -27,7 +29,7 @@ pub fn run(app: &mut App) -> Result<(), io::Error> {
     // Main event loop
     loop {
         // Draw the UI
-        terminal.draw(|f| draw_ui(f, app))?;
+        terminal.draw(|f| draw_main_ui(f, app))?;
 
         // Handle input
         if let Event::Key(key) = event::read()? {
@@ -51,19 +53,27 @@ pub fn run(app: &mut App) -> Result<(), io::Error> {
     Ok(())
 }
 
-fn draw_ui<B: Backend>(f: &mut tui::Frame<B>, app: &App) {
-    // Layout
-    let chunks = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints([Constraint::Percentage(100)].as_ref())
-        .split(f.size());
+fn draw_main_ui<B: Backend>(frame: &mut tui::Frame<B>, app: &mut App) {
+    let main_border = Block::default()
+        .borders(Borders::ALL)
+        .style(Style::default())
+        .title("Setup - Project Manager");
 
-    // Items
-    let items: Vec<ListItem> = app.items.iter().map(|i| ListItem::new(i.clone())).collect();
-    let list = List::new(items)
-        .block(Block::default().borders(Borders::ALL).title("Menu"))
-        .highlight_symbol("> ");
+    frame.render_widget(main_border, frame.size());
 
-    // Render
-    f.render_stateful_widget(list, chunks[0], &mut tui::widgets::ListState::default());
+    let working_chunk = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([Constraint::Percentage(30), Constraint::Percentage(70)])
+        .margin(1)
+        .split(frame.size());
+
+    let left_block = app.projects.projects_as_widget_list();
+    // let left_block = Block::default()
+    //     .border_style(Style::default().fg(tui::style::Color::Magenta))
+    //     .borders(Borders::all())
+    //     .title("Projects");
+    let right_block = Block::default().borders(Borders::all());
+
+    frame.render_stateful_widget(left_block, working_chunk[0], &mut app.state);
+    frame.render_widget(right_block, working_chunk[1]);
 }
